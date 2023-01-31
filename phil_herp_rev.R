@@ -268,3 +268,30 @@ grid.arrange(p.m.f, p.for.loc, ncol=2)
 dev.off()
 
 ```
+
+**6. Plot data types**
+```{r, data types}
+#aggregate data
+d.mph <- ph.herps %>% group_by(Year) %>% summarise(Freq = sum(Morph))
+d.mph <- d.mph %>% mutate(Types = "Morphology")
+d.mol <- ph.herps %>% group_by(Year) %>% summarise(Freq = sum(Molec))
+d.mol <- d.mol %>% mutate(Types = "Molecular")
+
+d.all <- rbind(d.mph, d.mol)
+
+#assignlabels
+d.all <- mutate(d.all, lab = if_else(Types %in% "Morphology", "Morphology", if_else(Types %in% "Molecular", "Inlcudes Molecular Data", "Not data")))
+
+d.all$lab <- factor(d.all$lab, levels = c("Morphology", "Inlcudes Molecular Data"))
+
+d.all$Gender <- factor(d.all$Types, levels = unique(d.all$Types))
+
+#create stacked barplot
+p.d.types <- ggplot(d.all, aes(x = Year, y = Freq, fill = lab, label = Freq)) + geom_col(position = "stack") + theme(panel.background = element_blank(), axis.line = element_line(colour = "black"), legend.position = "bottom", legend.direction = "horizontal", legend.key.size = unit(0.7, 'cm'), legend.title=element_blank(), text = element_text(size=20), plot.title = element_text(size = 20, face = "bold"), axis.title=element_text(size=16, face="bold"), axis.text.x = element_text(angle = 70, vjust = 0.5)) + scale_fill_manual(values = c("#abdda4", "#5e4fa2")) + labs(fill="", x="", y="Number of papers") + ggtitle("") + scale_x_continuous("Year", labels = as.character(d.all$Year), breaks = d.all$Year)
+
+p.d.types
+
+tiff("fig_3.tif", res=300, width = 8, height = 5, unit="in")
+p.d.types
+dev.off()
+```
