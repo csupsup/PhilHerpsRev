@@ -295,3 +295,67 @@ tiff("fig_3.tif", res=300, width = 8, height = 5, unit="in")
 p.d.types
 dev.off()
 ```
+
+**8. Plot maps**
+```{r, maps}
+#load packages
+library(sf)
+library(rgdal)
+
+#new species
+ph.adm <- read_sf("ph_shapefile/ph_adm0.shp")
+ph.herps.newsp <- read_sf("ph_shapefile/ph_herps_newsp.shp")
+
+ph.herps.newsp <- ph.herps.newsp %>% rename("TaxaCode" = "Taxa")
+ph.herps.newsp <- ph.herps.newsp %>% rename("Taxa" = "TaxaName")
+
+p.cols <- c("#f46d43", "#5e4fa2", "#3288bd")
+
+m.newsp <- ggplot() +
+  geom_sf(data = ph.adm, fill = "gray", color = NA) +
+  geom_sf(data = ph.herps.newsp, aes(color = Taxa, shape = Taxa, fill = Taxa), size = 1.5) +
+  labs(title = "") + scale_fill_manual(values = c(15,16,17)) + scale_color_manual(values = p.cols) + theme(legend.position = c(0.3,1), legend.key = element_rect(fill = "transparent"), axis.line = element_blank(), panel.background = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank(),axis.text.y=element_blank(), axis.ticks.y=element_blank(), plot.title = element_text(size = 15, face = "bold"), legend.title = element_blank()) + guides(fill=guide_legend(
+                 keywidth=0.1,
+                 keyheight=0.1,
+                 default.unit="inch")) + ggtitle("A")
+
+#new distribution records and natural history notes
+ph.herps.ng <- read_sf("ph_shapefile/ph_herps_newgeo_nat.shp")
+
+ph.herps.ng <- ph.herps.ng %>% rename("TaxaCode" = "Taxa")
+
+ph.herps.ng<- mutate(ph.herps.ng, Paper = if_else(Type == 1, "New Distribution Records", if_else(Type == 4, "Natural History Notes", "No data")))
+
+p.cols <- c("#17040c", "#0e7b59")
+
+m.ng <- ggplot() +
+  geom_sf(data = ph.adm, fill = "gray", color = NA) +
+  geom_sf(data = ph.herps.ng, aes(color = Paper, shape = Paper, fill = Paper), size = 1.5) +
+  labs(title = "") + scale_fill_manual(values = c(15,16,17)) + scale_color_manual(values = p.cols) + theme(legend.position = c(0.3,1), legend.key = element_rect(fill = "transparent"), axis.line = element_blank(), panel.background = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank(),axis.text.y=element_blank(), axis.ticks.y=element_blank(), plot.title = element_text(size = 15, face = "bold"), legend.title = element_blank()) + guides(fill=guide_legend(
+                 keywidth=0.1,
+                 keyheight=0.1,
+                 default.unit="inch")) + ggtitle("B")
+
+#surveys
+ph.herps.s <- read_sf("ph_shapefile/ph_herps_surveys.shp")
+
+ph.herps.s <- ph.herps.s %>% rename("TaxaCode" = "Taxa")
+
+ph.herps.s <- mutate(ph.herps.s, Paper = if_else(Type == 2, "Targeted Surveys", "No data"))
+
+p.cols <- c("#d53e4f")
+
+m.s <- ggplot() +
+  geom_sf(data = ph.adm, fill = "gray", color = NA) +
+  geom_sf(data = ph.herps.s, aes(color = Paper, shape = Paper, fill = Paper), size = 1.5) +
+  labs(title = "") + scale_fill_manual(values = c(15,16,17)) + scale_color_manual(values = p.cols) + theme(legend.position = c(0.3,1), legend.key = element_rect(fill = "transparent"), axis.line = element_blank(), panel.background = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank(),axis.text.y=element_blank(), axis.ticks.y=element_blank(), plot.title = element_text(size = 15, face = "bold"), legend.title = element_blank()) + guides(fill=guide_legend(
+                 keywidth=0.1,
+                 keyheight=0.1,
+                 default.unit="inch")) + ggtitle("C")
+
+ggarrange(m.newsp, m.ng, m.s, ncol=3)
+
+tiff("fig_5.tif", res=300, width = 9, height = 5, unit="in")
+ggarrange(m.newsp, m.ng, m.s, ncol=3)
+dev.off()
+```
