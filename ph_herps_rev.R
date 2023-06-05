@@ -1,5 +1,5 @@
 ---
-title: "PH Herp Status"
+title: "PH Herp Review"
 author: "Supsup et al."
 date: "30 January 2023"
 output:
@@ -418,12 +418,3 @@ tiff("fig_5.tif", res=300, width = 9, height = 5, unit="in")
 ggarrange(m.newsp, m.ng, m.s, ncol=3)
 dev.off()
 ```
-
-
-
-
-
-
-
-
-
