@@ -25,6 +25,8 @@ library(tidyr)
 library(sf)
 library(rgdal)
 library(cowplot)
+library(jtools)
+library(caret)
 ```
 
 **2. Read data**
@@ -227,41 +229,64 @@ dev.off()
 ```{r, num vs year}
 #count papers per year
 num.year <- ph.herps %>% count(Year)
+#poisson regression
+glm.res <- glm(n ~ Year, data = num.year, family = poisson(link = "log"))
+#results summary
+summ(glm.res)
 
-#plot local polynomial regression fitting method
+#local polynomial regression
+#k-fold cross validation
+l.ctrl <- trainControl(method = "cv", number = 5)
+l.grid <- expand.grid(span = seq(0.5, 1.0, len = 6), degree = 1)
+#perform cross-validation using smoothing spans ranging from 0.5 to 1.0
+loess.mod <- train(n ~ Year, data = num.year, method = "gamLoess", tuneGrid=l.grid, trControl = l.ctrl)
+#print results of k-fold cross-validation
+print(loess.mod) #select span with lowest RMSE
+#perform polynomial regression
+loess.res  <- loess(n ~ Year, data=num.year, span=.9)
 
-p.nyear.lm <- ggplot(num.year, aes(x=Year, y=n)) + 
+#plot poisson regression
+p.nyear.glm <- ggplot(num.year, aes(x=Year, y=n)) + 
     geom_point(size=3) + 
-    geom_smooth(method="lm", col="firebrick", size=1, se = TRUE, level = 0.95, span = 1, linetype = "solid") + 
+    geom_smooth(method="glm", formula = y ~ x, method.args = list(family = "poisson"), 
+                col="firebrick", size=1, se = TRUE, level = 0.95, span = 1, linetype = "solid") +
     labs(y="Number of papers", x="Year", colour = "") + 
     scale_x_continuous("Year", labels = as.character(num.year$Year), breaks = num.year$Year) + 
-    geom_text(aes(label=n),hjust=0.7, vjust=2, size = 4) + theme(panel.background = element_blank(), 
-      panel.border = element_rect(colour = "black", fill=NA, size=0.5), axis.text=element_text(size=14), 
-      axis.title=element_text(size=16, face="bold"), legend.text=element_text(size=15),plot.title = element_text(size = 20, face = "bold"), 
-      legend.title = element_blank(), legend.box="vertical", axis.text.x = element_text(angle = 70, vjust = 0.5)) + 
+    scale_y_continuous(breaks = seq(-10, 60, by=10), limits=c(-10,60)) +
+    geom_text(aes(label=n),hjust=0.7, vjust=2, size = 4) + 
+    theme(panel.background = element_blank(), 
+          panel.border = element_rect(colour = "black", fill=NA, size=0.5), 
+          axis.text=element_text(size=14), axis.title=element_text(size=16, face="bold"),
+          legend.text=element_text(size=15),plot.title = element_text(size = 20, face = "bold"), 
+          legend.title = element_blank(), legend.box="vertical", 
+          axis.text.x = element_text(angle = 70, vjust = 0.5)) + 
     ggtitle("(A)") + 
-    geom_area(fill="#69b3a2", alpha=0.5)
+    geom_area(fill="#69b3a2", alpha=0.5) 
 
+#plot local polynomial regression
 p.nyear.loc <- ggplot(num.year, aes(x=Year, y=n)) + 
     geom_point(size=3) +  
     labs(y="Number of papers", x="Year", colour = "") + 
-    scale_x_continuous("Year", labels = as.character(num.year$Year), breaks = num.year$Year) + 
+    scale_x_continuous("Year", labels = as.character(num.year$Year), breaks = num.year$Year) +
+    scale_y_continuous(breaks = seq(-10, 60, by=10), limits=c(-10,60)) +
     geom_text(aes(label=n),hjust=0.8, vjust=2, size = 4) + 
-    theme(panel.background = element_blank(), panel.border = element_rect(colour = "black", fill=NA, size=0.5), 
-      axis.text=element_text(size=14), axis.title=element_text(size=16, face="bold"), legend.text=element_text(size=15), 
-      plot.title = element_text(size = 20, face = "bold"), legend.title = element_blank(), legend.box="vertical", 
-      axis.text.x = element_text(angle = 70, vjust = 0.5)) + 
-    geom_smooth(col="firebrick") + 
+    theme(panel.background = element_blank(), 
+          panel.border = element_rect(colour = "black", fill=NA, size=0.5), 
+          axis.text=element_text(size=14), axis.title=element_text(size=16, face="bold"), 
+          legend.text=element_text(size=15),plot.title = element_text(size = 20, face = "bold"), 
+          legend.title = element_blank(), legend.box="vertical", 
+          axis.text.x = element_text(angle = 70, vjust = 0.5)) + 
+    #geom_smooth(col="firebrick") + 
     ggtitle("(B)") + 
-    geom_area(fill="#69b3a2", alpha=0.5)
+    geom_area(fill="#69b3a2", alpha=0.5) +
+    stat_smooth(span=0.9, se=TRUE, col="firebrick")
 
-grid.arrange(p.nyear.lm,p.nyear.loc, ncol = 2)
+grid.arrange(p.nyear.glm,p.nyear.loc, ncol = 2)
 
 #export fig
 tiff("fig_1.tif", res=300, width = 12, height = 5, unit="in")
-grid.arrange(p.nyear.lm, p.nyear.loc, ncol = 2)
+grid.arrange(p.nyear.glm, p.nyear.loc, ncol = 2)
 dev.off()
-
 ```
 
 **5. Plot data demography**
