@@ -533,4 +533,19 @@ plot_grid(m.newsp, m.ng, m.s, ncol=3, align = "hv")
 tiff("fig_4.tif", res=300, width = 6.0, height = 4.5, unit="in")
 plot_grid(m.newsp, m.ng, m.s, ncol=3, align = "hv")
 dev.off()
+
+#proportions of targeted surveys per PAIC
+ph.herps2 <- read.csv("ph_herps_review_coor_29Dec2023.csv")
+
+count.paic <- ph.herps2 %>%
+    group_by(Type) %>%
+    count(PAIC)
+
+#remove empty rows
+count.paic[!(is.na(count.paic$PAIC) | count.paic$PAIC==""), ]
+
+#calulate percentage
+prop.paic <- count.paic %>% group_by(Type) %>% mutate(per= prop.table(n) * 100)
+
+prop.paic
 ```
